@@ -1,5 +1,3 @@
-import { json } from '@tanstack/react-start';
-import { createAPIFileRoute } from '@tanstack/react-start/api';
 import { parseAttendanceFromChat, extractIncidentsFromChat } from '@/lib/ai';
 
 // Types for Telegram Bot API
@@ -34,12 +32,12 @@ interface TelegramUpdate {
  * Telegram webhook endpoint to receive messages
  * POST /api/telegram/webhook
  */
-export const POST = async (req: Request): Promise<Response> => {
+export async function api(req: Request): Promise<Response> {
   try {
     const body: TelegramUpdate = await req.json();
 
     if (!body.message) {
-      return json({ ok: true });
+      return Response.json({ ok: true });
     }
 
     const message = body.message;
@@ -71,10 +69,10 @@ export const POST = async (req: Request): Promise<Response> => {
       }
     }
 
-    return json({ ok: true });
+    return Response.json({ ok: true });
   } catch (error) {
     console.error('Telegram webhook error:', error);
-    return json({ ok: false, error: String(error) }, { status: 500 });
+    return Response.json({ ok: false, error: String(error) }, { status: 500 });
   }
 };
 
@@ -146,9 +144,3 @@ async function notifyIncident(chatId: number, incident: any) {
     console.error('Error notifying incident:', error);
   }
 }
-
-export const Route = createAPIFileRoute('/api/telegram/webhook')(
-  {
-    POST,
-  },
-);
