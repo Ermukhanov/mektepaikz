@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useMektep, employees } from "@/lib/mektep-data";
 import { Plus } from "lucide-react";
 
-export const Route = createFileRoute("/tasks")({
+export const Route = createFileRoute("/_authenticated/tasks")({
   component: TasksPage,
 });
 

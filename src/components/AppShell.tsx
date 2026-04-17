@@ -1,6 +1,8 @@
-import { Link, Outlet, useLocation } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import "@/lib/i18n";
 import {
   LayoutDashboard,
   CalendarDays,
@@ -14,28 +16,33 @@ import {
   Utensils,
   CheckCircle2,
   ClipboardList,
+  LogOut,
+  Globe,
 } from "lucide-react";
 import { SplashScreen } from "./SplashScreen";
 import { VoiceFAB } from "./VoiceFAB";
 import { useMektep } from "@/lib/mektep-data";
+import { useAuth } from "@/lib/auth";
 
-const nav = [
-  { to: "/", label: "Overview", icon: LayoutDashboard },
-  { to: "/schedule", label: "Smart Schedule", icon: CalendarDays },
-  { to: "/tasks", label: "Task Manager", icon: KanbanSquare },
-  { to: "/incidents", label: "Incident Log", icon: AlertTriangle },
-  { to: "/knowledge", label: "RAG Knowledge", icon: BookOpenText },
-  { to: "/employees", label: "Employees", icon: Users },
-];
-
-export function AppShell() {
+export function AppShell({ children }: { children: ReactNode }) {
+  const { t, i18n } = useTranslation();
   const [splash, setSplash] = useState(true);
   const location = useLocation();
   const tasks = useMektep((s) => s.tasks);
   const classes = useMektep((s) => s.classes);
+  const { user, logout } = useAuth();
+
+  const nav = [
+    { to: "/", label: t("nav.overview"), icon: LayoutDashboard },
+    { to: "/schedule", label: t("nav.schedule"), icon: CalendarDays },
+    { to: "/tasks", label: t("nav.tasks"), icon: KanbanSquare },
+    { to: "/incidents", label: t("nav.incidents"), icon: AlertTriangle },
+    { to: "/knowledge", label: t("nav.knowledge"), icon: BookOpenText },
+    { to: "/employees", label: t("nav.employees"), icon: Users },
+  ];
 
   useEffect(() => {
-    const t = setTimeout(() => setSplash(false), 1800);
+    const t = setTimeout(() => setSplash(false), 1400);
     return () => clearTimeout(t);
   }, []);
 
@@ -44,6 +51,14 @@ export function AppShell() {
   const attendance = totalKids ? Math.round((totalPresent / totalKids) * 100) : 0;
   const portions = totalPresent;
   const activeTasks = tasks.filter((t) => t.status !== "done").length;
+
+  const cycleLang = () => {
+    const order = ["kk", "ru", "en"];
+    const i = order.indexOf(i18n.language?.slice(0, 2) || "en");
+    const next = order[(i + 1) % order.length];
+    i18n.changeLanguage(next);
+    localStorage.setItem("mektep.lang", next);
+  };
 
   return (
     <>
@@ -82,13 +97,31 @@ export function AppShell() {
               );
             })}
           </nav>
-          <div className="p-3 border-t border-border">
+          <div className="p-3 border-t border-border space-y-2">
             <div className="rounded-lg bg-gradient-primary p-3 text-primary-foreground">
               <div className="flex items-center gap-2 text-xs font-semibold">
                 <span className="h-2 w-2 rounded-full bg-success animate-pulse" /> AI Online
               </div>
               <div className="text-[11px] opacity-80 mt-1">Listening to 12 chats</div>
             </div>
+            {user && (
+              <div className="flex items-center gap-2 rounded-lg bg-secondary px-3 py-2">
+                <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
+                  {user.name[0]?.toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-semibold text-foreground truncate">{user.name}</div>
+                  <div className="text-[10px] text-muted-foreground capitalize">{t(`auth.${user.role}`)}</div>
+                </div>
+                <button
+                  onClick={logout}
+                  className="p-1.5 rounded-md hover:bg-card text-muted-foreground hover:text-destructive"
+                  title={t("auth.logout")}
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
           </div>
         </aside>
 
@@ -106,11 +139,21 @@ export function AppShell() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={cycleLang}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-secondary text-muted-foreground text-xs font-semibold uppercase"
+                  title="Change language"
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  {i18n.language?.slice(0, 2)}
+                </button>
                 <button className="relative p-2 rounded-lg hover:bg-secondary text-muted-foreground">
                   <Bell className="h-4 w-4" />
                   <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive" />
                 </button>
-                <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground text-xs font-bold">D</div>
+                <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
+                  {user?.name?.[0]?.toUpperCase() || "D"}
+                </div>
               </div>
             </div>
             {/* Stats bar */}
@@ -121,9 +164,7 @@ export function AppShell() {
             </div>
           </header>
 
-          <main className="flex-1 p-6 overflow-auto">
-            <Outlet />
-          </main>
+          <main className="flex-1 p-6 overflow-auto">{children}</main>
         </div>
 
         <VoiceFAB />

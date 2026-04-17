@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 
-export const Route = createFileRoute("/incidents")({
+export const Route = createFileRoute("/_authenticated/incidents")({
   component: IncidentsPage,
 });
 

@@ -1,5 +1,6 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
-import { AppShell } from "@/components/AppShell";
+import { AuthProvider } from "@/lib/auth";
+import "@/lib/i18n";
 
 import appCss from "../styles.css?url";
 
@@ -29,7 +30,11 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "theme-color", content: "#1A2B3C" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "MEKTEP AI" },
       { title: "MEKTEP AI — Aqbobek School Director Dashboard" },
       { name: "description", content: "AI-driven school orchestration: smart attendance, voice tasks, substitutions, RAG for orders." },
       { property: "og:title", content: "MEKTEP AI — Aqbobek School Director Dashboard" },
@@ -37,12 +42,13 @@ export const Route = createRootRoute({
       { property: "og:type", content: "website" },
       { name: "twitter:title", content: "MEKTEP AI — Aqbobek School Director Dashboard" },
       { name: "twitter:description", content: "AI-driven school orchestration: smart attendance, voice tasks, substitutions, RAG for orders." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0a15fcf8-3a4c-4aec-8795-8813a6e2bd27/id-preview-c2384a96--fa6a0bf7-6b11-4f44-a187-bb999181dffe.lovable.app-1776438655057.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0a15fcf8-3a4c-4aec-8795-8813a6e2bd27/id-preview-c2384a96--fa6a0bf7-6b11-4f44-a187-bb999181dffe.lovable.app-1776438655057.png" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "icon", href: "/icon-192.png", type: "image/png" },
+      { rel: "apple-touch-icon", href: "/icon-192.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" },
@@ -68,5 +74,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  return <AppShell />;
+  return (
+    <AuthProvider>
+      <Outlet />
+    </AuthProvider>
+  );
 }
