@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { employees } from "@/lib/mektep-data";
 import { Mail, Phone } from "lucide-react";
 
-export const Route = createFileRoute("/employees")({
+export const Route = createFileRoute("/_authenticated/employees")({
   component: EmployeesPage,
 });
 

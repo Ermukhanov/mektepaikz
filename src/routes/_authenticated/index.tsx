@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useMektep, parseAttendance, employees } from "@/lib/mektep-data";
 import { MessageSquare, Users2, TrendingUp, Activity } from "lucide-react";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   component: Overview,
 });
 

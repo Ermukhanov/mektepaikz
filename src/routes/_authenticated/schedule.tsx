@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useMektep, employees } from "@/lib/mektep-data";
 import { Stethoscope, Sparkles } from "lucide-react";
 
-export const Route = createFileRoute("/schedule")({
+export const Route = createFileRoute("/_authenticated/schedule")({
   component: SchedulePage,
 });
 
