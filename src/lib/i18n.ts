@@ -1,0 +1,181 @@
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import LanguageDetector from "i18next-browser-languagedetector";
+
+const resources = {
+  kk: {
+    translation: {
+      app: { name: "MEKTEP AI", tagline: "Ақбөбек мектебі · AI Thinking…" },
+      lang: { title: "Тілді таңдаңыз", subtitle: "Қандай тілде жалғастырамыз?", continue: "Жалғастыру" },
+      onboarding: {
+        skip: "Өткізіп жіберу",
+        next: "Келесі",
+        start: "Бастау",
+        s1_title: "Ақылды кесте",
+        s1_desc: "AI мұғалімдер ауырғанда автоматты түрде алмастыру табады.",
+        s2_title: "Дауыстық тапсырмалар",
+        s2_desc: "Микрофонды басып, тапсырманы айтыңыз — AI оны қызметкерге тағайындайды.",
+        s3_title: "Бұйрықтар базасы (RAG)",
+        s3_desc: "Заңды мәтіндерді мұғалімдер үшін 5 пунктке дейін жеңілдетіңіз.",
+      },
+      auth: {
+        login: "Кіру",
+        signup: "Тіркелу",
+        email: "Электрондық пошта",
+        password: "Құпия сөз",
+        name: "Аты-жөні",
+        submit_login: "Кіру",
+        submit_signup: "Аккаунт жасау",
+        no_account: "Аккаунт жоқ па?",
+        have_account: "Аккаунтыңыз бар ма?",
+        wrong: "Қате email немесе құпия сөз",
+        title_login: "Қош келдіңіз",
+        title_signup: "Аккаунт жасаңыз",
+        director: "Директор",
+        teacher: "Мұғалім",
+        staff: "Қызметкер",
+        role: "Рөл",
+        logout: "Шығу",
+      },
+      nav: {
+        overview: "Шолу",
+        schedule: "Кесте",
+        tasks: "Тапсырмалар",
+        incidents: "Оқиғалар",
+        knowledge: "Бұйрықтар",
+        employees: "Қызметкерлер",
+      },
+      voice: {
+        title: "Дауыстан тапсырмаға",
+        listening: "Тыңдап жатырмын…",
+        type: "Тапсырманы жазыңыз немесе айтыңыз",
+        assign: "Тағайындау",
+        not_supported: "Браузер дауысты қолдамайды — мәтінді теріңіз",
+        try: "Мысал",
+      },
+    },
+  },
+  ru: {
+    translation: {
+      app: { name: "MEKTEP AI", tagline: "Школа Ақбөбек · AI Thinking…" },
+      lang: { title: "Выберите язык", subtitle: "На каком языке продолжим?", continue: "Продолжить" },
+      onboarding: {
+        skip: "Пропустить",
+        next: "Далее",
+        start: "Начать",
+        s1_title: "Умное расписание",
+        s1_desc: "AI автоматически найдёт замену, когда учитель заболел.",
+        s2_title: "Голосовые задачи",
+        s2_desc: "Нажмите микрофон и скажите задачу — AI назначит её сотруднику.",
+        s3_title: "База приказов (RAG)",
+        s3_desc: "Упрощайте сложные приказы до 5 пунктов для учителей.",
+      },
+      auth: {
+        login: "Вход",
+        signup: "Регистрация",
+        email: "Электронная почта",
+        password: "Пароль",
+        name: "ФИО",
+        submit_login: "Войти",
+        submit_signup: "Создать аккаунт",
+        no_account: "Нет аккаунта?",
+        have_account: "Уже есть аккаунт?",
+        wrong: "Неверный email или пароль",
+        title_login: "С возвращением",
+        title_signup: "Создайте аккаунт",
+        director: "Директор",
+        teacher: "Учитель",
+        staff: "Сотрудник",
+        role: "Роль",
+        logout: "Выйти",
+      },
+      nav: {
+        overview: "Обзор",
+        schedule: "Расписание",
+        tasks: "Задачи",
+        incidents: "Инциденты",
+        knowledge: "Приказы",
+        employees: "Сотрудники",
+      },
+      voice: {
+        title: "Голос → Задача",
+        listening: "Слушаю…",
+        type: "Введите или произнесите задачу",
+        assign: "Назначить",
+        not_supported: "Браузер не поддерживает голос — введите текст",
+        try: "Пример",
+      },
+    },
+  },
+  en: {
+    translation: {
+      app: { name: "MEKTEP AI", tagline: "Aqbobek School · AI Thinking…" },
+      lang: { title: "Choose your language", subtitle: "Which language do you prefer?", continue: "Continue" },
+      onboarding: {
+        skip: "Skip",
+        next: "Next",
+        start: "Get Started",
+        s1_title: "Smart Schedule",
+        s1_desc: "AI automatically finds substitutes when a teacher reports sick.",
+        s2_title: "Voice-to-Task",
+        s2_desc: "Tap the mic and speak — AI assigns the task to the right person.",
+        s3_title: "Orders Knowledge (RAG)",
+        s3_desc: "Simplify complex legal orders into 5 clear bullet points for teachers.",
+      },
+      auth: {
+        login: "Sign in",
+        signup: "Sign up",
+        email: "Email",
+        password: "Password",
+        name: "Full name",
+        submit_login: "Sign in",
+        submit_signup: "Create account",
+        no_account: "No account yet?",
+        have_account: "Already have an account?",
+        wrong: "Invalid email or password",
+        title_login: "Welcome back",
+        title_signup: "Create your account",
+        director: "Director",
+        teacher: "Teacher",
+        staff: "Staff",
+        role: "Role",
+        logout: "Sign out",
+      },
+      nav: {
+        overview: "Overview",
+        schedule: "Schedule",
+        tasks: "Tasks",
+        incidents: "Incidents",
+        knowledge: "Knowledge",
+        employees: "Employees",
+      },
+      voice: {
+        title: "Voice-to-Task",
+        listening: "Listening…",
+        type: "Type or speak your task",
+        assign: "Assign",
+        not_supported: "Browser doesn't support voice — type instead",
+        try: "Try",
+      },
+    },
+  },
+};
+
+if (!i18n.isInitialized) {
+  i18n
+    .use(LanguageDetector)
+    .use(initReactI18next)
+    .init({
+      resources,
+      fallbackLng: "en",
+      supportedLngs: ["kk", "ru", "en"],
+      interpolation: { escapeValue: false },
+      detection: {
+        order: ["localStorage", "navigator"],
+        lookupLocalStorage: "mektep.lang",
+        caches: ["localStorage"],
+      },
+    });
+}
+
+export default i18n;
