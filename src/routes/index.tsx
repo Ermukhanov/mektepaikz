@@ -1,14 +1,14 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { hasLanguage, hasOnboarded } from "@/lib/auth";
 
+// Root path is handled by /_authenticated/ (index inside the protected layout).
+// This file is a fallback redirect in case TanStack picks the public root first;
+// safe no-op since /_authenticated/ matches "/" and runs the auth gate.
 export const Route = createFileRoute("/")({
   beforeLoad: () => {
-    // Gate: language → onboarding → auth → dashboard
     if (typeof window === "undefined") return;
-    if (!hasLanguage()) throw redirect({ to: "/language" });
-    if (!hasOnboarded()) throw redirect({ to: "/onboarding" });
-    // If language + onboarded but no session, _authenticated will bounce to /auth
-    throw redirect({ to: "/dashboard" });
+    if (!localStorage.getItem("mektep.lang")) throw redirect({ to: "/language" });
+    if (localStorage.getItem("mektep.onboarded") !== "1") throw redirect({ to: "/onboarding" });
+    if (!localStorage.getItem("mektep.session")) throw redirect({ to: "/auth" });
   },
   component: () => null,
 });

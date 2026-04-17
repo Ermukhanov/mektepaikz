@@ -33,7 +33,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
 
   const nav = [
-    { to: "/dashboard", label: t("nav.overview"), icon: LayoutDashboard },
+    { to: "/", label: t("nav.overview"), icon: LayoutDashboard },
     { to: "/schedule", label: t("nav.schedule"), icon: CalendarDays },
     { to: "/tasks", label: t("nav.tasks"), icon: KanbanSquare },
     { to: "/incidents", label: t("nav.incidents"), icon: AlertTriangle },
@@ -80,7 +80,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <nav className="flex-1 px-3 py-4 space-y-1">
             {nav.map((n) => {
-              const active = location.pathname === n.to || (n.to === "/dashboard" && location.pathname === "/");
+              const active = location.pathname === n.to;
               return (
                 <Link
                   key={n.to}
