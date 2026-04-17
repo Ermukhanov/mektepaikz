@@ -85,13 +85,13 @@ function SchedulePage() {
             <div key={d} className="bg-secondary/50 p-3 text-xs font-semibold text-muted-foreground border-l border-border">{d}</div>
           ))}
           {periods.map((p, i) => (
-            <>
-              <div key={`p-${i}`} className="p-3 text-xs text-muted-foreground border-t border-border bg-secondary/20">{p}</div>
+            <div key={`row-${i}`} className="contents">
+              <div className="p-3 text-xs text-muted-foreground border-t border-border bg-secondary/20">{p}</div>
               {days.map((_, j) => {
                 const k = `${i}-${j}`;
                 const lesson = lessons[k];
                 const sick = isSlotSick(i, j);
-                const free = sickTeacherId && !lesson; // empty slot when someone is sick → highlight as substitute opportunity
+                const free = sickTeacherId && !lesson;
                 return (
                   <div key={`c-${k}`} className={`p-2 border-t border-l border-border min-h-[64px] transition-colors ${sick ? "bg-destructive/10" : free ? "bg-success/10" : ""}`}>
                     {lesson && (
@@ -106,7 +106,7 @@ function SchedulePage() {
                   </div>
                 );
               })}
-            </>
+            </div>
           ))}
         </div>
       </div>
