@@ -1,86 +1,118 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import type { Session, User } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 
 export type Role = "director" | "teacher" | "staff";
-export type AuthUser = { id: string; email: string; name: string; role: Role };
-
-type StoredUser = AuthUser & { password: string };
+export type Profile = {
+  id: string;
+  school_id: string | null;
+  full_name: string;
+  email: string | null;
+  language: string | null;
+  avatar_url: string | null;
+};
 
 type AuthContextType = {
-  user: AuthUser | null;
+  user: User | null;
+  session: Session | null;
+  profile: Profile | null;
+  role: Role | null;
   isAuthenticated: boolean;
+  loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string, role: Role) => Promise<void>;
-  logout: () => void;
+  signup: (name: string, email: string, password: string, role: Role, schoolName?: string) => Promise<void>;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
-const USERS_KEY = "mektep.users";
-const SESSION_KEY = "mektep.session";
-
-function readUsers(): StoredUser[] {
-  try {
-    return JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
-function writeUsers(u: StoredUser[]) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(u));
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [ready, setReady] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [role, setRole] = useState<Role | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch profile + role for current user
+  const loadUserData = async (uid: string) => {
+    const [{ data: prof }, { data: roles }] = await Promise.all([
+      supabase.from("profiles").select("id,school_id,full_name,email,language,avatar_url").eq("id", uid).maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id", uid).limit(1),
+    ]);
+    setProfile(prof as Profile | null);
+    setRole((roles?.[0]?.role as Role) ?? null);
+  };
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(SESSION_KEY);
-      if (raw) setUser(JSON.parse(raw));
-    } catch {
-      // ignore
-    }
-    setReady(true);
+    // 1. Subscribe FIRST
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
+      if (newSession?.user) {
+        // defer to avoid deadlocks
+        setTimeout(() => loadUserData(newSession.user.id), 0);
+      } else {
+        setProfile(null);
+        setRole(null);
+      }
+    });
+
+    // 2. THEN check existing session
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setUser(data.session?.user ?? null);
+      if (data.session?.user) loadUserData(data.session.user.id);
+      setLoading(false);
+    });
+
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   const login = async (email: string, password: string) => {
-    const users = readUsers();
-    const found = users.find((u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
-    if (!found) throw new Error("invalid");
-    const u: AuthUser = { id: found.id, email: found.email, name: found.name, role: found.role };
-    localStorage.setItem(SESSION_KEY, JSON.stringify(u));
-    setUser(u);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
   };
 
-  const signup = async (name: string, email: string, password: string, role: Role) => {
-    const users = readUsers();
-    if (users.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
-      // auto-login if same password, else error
-      const f = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-      if (f && f.password === password) {
-        const u: AuthUser = { id: f.id, email: f.email, name: f.name, role: f.role };
-        localStorage.setItem(SESSION_KEY, JSON.stringify(u));
-        setUser(u);
-        return;
-      }
-      throw new Error("exists");
-    }
-    const newUser: StoredUser = { id: crypto.randomUUID(), name, email, password, role };
-    users.push(newUser);
-    writeUsers(users);
-    const u: AuthUser = { id: newUser.id, email, name, role };
-    localStorage.setItem(SESSION_KEY, JSON.stringify(u));
-    setUser(u);
+  const signup = async (name: string, email: string, password: string, role: Role, schoolName?: string) => {
+    const redirectUrl = `${window.location.origin}/`;
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          full_name: name,
+          role,
+          school_name: schoolName,
+          language: localStorage.getItem("mektep.lang") || "ru",
+        },
+      },
+    });
+    if (error) throw error;
   };
 
-  const logout = () => {
-    localStorage.removeItem(SESSION_KEY);
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
+    setSession(null);
+    setProfile(null);
+    setRole(null);
   };
-
-  if (!ready) return null;
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        profile,
+        role,
+        isAuthenticated: !!session,
+        loading,
+        login,
+        signup,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -93,11 +125,13 @@ export function useAuth() {
 }
 
 export function hasOnboarded() {
+  if (typeof window === "undefined") return false;
   return localStorage.getItem("mektep.onboarded") === "1";
 }
 export function setOnboarded() {
   localStorage.setItem("mektep.onboarded", "1");
 }
 export function hasLanguage() {
+  if (typeof window === "undefined") return false;
   return !!localStorage.getItem("mektep.lang");
 }

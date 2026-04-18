@@ -3,7 +3,7 @@ import { Mic, X, Sparkles, Send, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import "@/lib/i18n";
-import { useMektep, parseVoiceTask, employees } from "@/lib/mektep-data";
+import { parseVoiceTask, employees } from "@/lib/mektep-data";
 
 // Web Speech API types (not in default lib.dom)
 type SpeechRecognitionEvent = {
@@ -39,7 +39,8 @@ export function VoiceFAB() {
   const [listening, setListening] = useState(false);
   const [supported, setSupported] = useState(false);
   const recRef = useRef<SpeechRecognitionInstance | null>(null);
-  const addTask = useMektep((s) => s.addTask);
+  // Tasks are persisted via Supabase in next iteration; for now show feedback only.
+  const addTask = (_t: { id: string; title: string; assignee: string; status: string; source: string }) => { void _t; };
 
   useEffect(() => {
     setSupported(!!getSR());

@@ -1,4 +1,4 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -21,16 +21,19 @@ import {
 } from "lucide-react";
 import { SplashScreen } from "./SplashScreen";
 import { VoiceFAB } from "./VoiceFAB";
-import { useMektep } from "@/lib/mektep-data";
 import { useAuth } from "@/lib/auth";
+import { useSchoolData } from "@/lib/use-school-data";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { t, i18n } = useTranslation();
   const [splash, setSplash] = useState(true);
   const location = useLocation();
-  const tasks = useMektep((s) => s.tasks);
-  const classes = useMektep((s) => s.classes);
-  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const { profile, role, logout } = useAuth();
+  const { classes, tasks, totalPresent, totalKids, attendance, activeTasks } = useSchoolData();
+
+  const displayName = profile?.full_name || profile?.email || "User";
+  const initial = displayName[0]?.toUpperCase() || "U";
 
   const nav = [
     { to: "/", label: t("nav.overview"), icon: LayoutDashboard },
@@ -42,22 +45,24 @@ export function AppShell({ children }: { children: ReactNode }) {
   ];
 
   useEffect(() => {
-    const t = setTimeout(() => setSplash(false), 1400);
-    return () => clearTimeout(t);
+    const id = setTimeout(() => setSplash(false), 1100);
+    return () => clearTimeout(id);
   }, []);
 
-  const totalPresent = classes.reduce((a, c) => a + c.present, 0);
-  const totalKids = classes.reduce((a, c) => a + c.total, 0);
-  const attendance = totalKids ? Math.round((totalPresent / totalKids) * 100) : 0;
   const portions = totalPresent;
-  const activeTasks = tasks.filter((t) => t.status !== "done").length;
 
   const cycleLang = () => {
     const order = ["kk", "ru", "en"];
-    const i = order.indexOf(i18n.language?.slice(0, 2) || "en");
+    const cur = i18n.language?.slice(0, 2) || "ru";
+    const i = order.indexOf(cur);
     const next = order[(i + 1) % order.length];
     i18n.changeLanguage(next);
     localStorage.setItem("mektep.lang", next);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate({ to: "/auth" });
   };
 
   return (
@@ -75,7 +80,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <div style={{ fontFamily: "'Space Grotesk', sans-serif" }} className="text-base font-bold text-foreground leading-none">
                 MEKTEP <span className="text-success">AI</span>
               </div>
-              <div className="text-[11px] text-muted-foreground mt-1">Aqbobek School</div>
+              <div className="text-[11px] text-muted-foreground mt-1">{t("app.tagline")}</div>
             </div>
           </div>
           <nav className="flex-1 px-3 py-4 space-y-1">
@@ -102,26 +107,26 @@ export function AppShell({ children }: { children: ReactNode }) {
               <div className="flex items-center gap-2 text-xs font-semibold">
                 <span className="h-2 w-2 rounded-full bg-success animate-pulse" /> AI Online
               </div>
-              <div className="text-[11px] opacity-80 mt-1">Listening to 12 chats</div>
+              <div className="text-[11px] opacity-80 mt-1">Telegram + WhatsApp</div>
             </div>
-            {user && (
-              <div className="flex items-center gap-2 rounded-lg bg-secondary px-3 py-2">
-                <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
-                  {user.name[0]?.toUpperCase()}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-semibold text-foreground truncate">{user.name}</div>
-                  <div className="text-[10px] text-muted-foreground capitalize">{t(`auth.${user.role}`)}</div>
-                </div>
-                <button
-                  onClick={logout}
-                  className="p-1.5 rounded-md hover:bg-card text-muted-foreground hover:text-destructive"
-                  title={t("auth.logout")}
-                >
-                  <LogOut className="h-3.5 w-3.5" />
-                </button>
+            <div className="flex items-center gap-2 rounded-lg bg-secondary px-3 py-2">
+              <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
+                {initial}
               </div>
-            )}
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-semibold text-foreground truncate">{displayName}</div>
+                <div className="text-[10px] text-muted-foreground capitalize">
+                  {role ? t(`auth.${role}`) : ""}
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="p-1.5 rounded-md hover:bg-card text-muted-foreground hover:text-destructive"
+                title={t("auth.logout")}
+              >
+                <LogOut className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
         </aside>
 
@@ -152,15 +157,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive" />
                 </button>
                 <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
-                  {user?.name?.[0]?.toUpperCase() || "D"}
+                  {initial}
                 </div>
               </div>
             </div>
-            {/* Stats bar */}
             <div className="px-6 pb-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <StatCard icon={Utensils} label="Canteen Summary" value={`${portions} portions`} hint="Auto-calculated · today" tone="primary" />
-              <StatCard icon={CheckCircle2} label="Attendance Rate" value={`${attendance}%`} hint="Live from teachers' chat" tone="success" />
-              <StatCard icon={ClipboardList} label="Active Tasks" value={`${activeTasks}`} hint="Pending instructions" tone="warning" />
+              <StatCard icon={Utensils} label={t("stats.canteen")} value={`${portions} ${t("stats.portions")}`} hint="Auto · today" tone="primary" />
+              <StatCard icon={CheckCircle2} label={t("stats.attendance")} value={`${attendance}%`} hint={`${classes.length} classes`} tone="success" />
+              <StatCard icon={ClipboardList} label={t("stats.tasks")} value={`${activeTasks}`} hint={`${tasks.length} total`} tone="warning" />
             </div>
           </header>
 
