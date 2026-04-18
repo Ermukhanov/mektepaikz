@@ -3,19 +3,18 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import "@/lib/i18n";
 import { useState, type FormEvent } from "react";
-import { Brain, Mail, Lock, User, Loader2 } from "lucide-react";
+import { Brain, Mail, Lock, User, Loader2, School } from "lucide-react";
 import { useAuth, type Role } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
-  beforeLoad: () => {
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: (search.redirect as string) || "/",
+  }),
+  beforeLoad: async () => {
     if (typeof window === "undefined") return;
-    try {
-      const raw = localStorage.getItem("mektep.session");
-      if (raw) throw redirect({ to: "/dashboard" });
-    } catch (e) {
-      // re-throw redirect
-      if (e && typeof e === "object" && "to" in e) throw e;
-    }
+    const { data } = await supabase.auth.getSession();
+    if (data.session) throw redirect({ to: "/" });
   },
   component: AuthPage,
 });
@@ -24,24 +23,41 @@ function AuthPage() {
   const { t } = useTranslation();
   const { login, signup } = useAuth();
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [schoolName, setSchoolName] = useState("");
   const [role, setRole] = useState<Role>("director");
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    setInfo(null);
     setLoading(true);
     try {
-      if (mode === "login") await login(email, password);
-      else await signup(name || email.split("@")[0], email, password, role);
-      navigate({ to: "/dashboard" });
-    } catch {
-      setError(t("auth.wrong"));
+      if (mode === "login") {
+        await login(email, password);
+        navigate({ to: search.redirect || "/" });
+      } else {
+        await signup(name || email.split("@")[0], email, password, role, schoolName || undefined);
+        // Auto sign-in attempt (when email confirm is disabled, session is set immediately)
+        try {
+          await login(email, password);
+          navigate({ to: "/" });
+        } catch {
+          setInfo(t("auth.check_email"));
+        }
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error";
+      if (msg.toLowerCase().includes("already")) setError(t("auth.exists"));
+      else if (msg.toLowerCase().includes("invalid")) setError(t("auth.wrong"));
+      else setError(msg);
     } finally {
       setLoading(false);
     }
@@ -64,7 +80,6 @@ function AuthPage() {
         </div>
 
         <div className="rounded-3xl bg-card border border-border shadow-elegant p-6">
-          {/* Tabs */}
           <div className="flex bg-secondary rounded-lg p-1 mb-5">
             {(["login", "signup"] as const).map((m) => (
               <button
@@ -72,6 +87,7 @@ function AuthPage() {
                 onClick={() => {
                   setMode(m);
                   setError(null);
+                  setInfo(null);
                 }}
                 className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${
                   mode === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
@@ -84,15 +100,25 @@ function AuthPage() {
 
           <form onSubmit={submit} className="space-y-3">
             {mode === "signup" && (
-              <Field icon={User}>
-                <input
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder={t("auth.name")}
-                  className="w-full bg-transparent outline-none text-sm"
-                />
-              </Field>
+              <>
+                <Field icon={User}>
+                  <input
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder={t("auth.name")}
+                    className="w-full bg-transparent outline-none text-sm"
+                  />
+                </Field>
+                <Field icon={School}>
+                  <input
+                    value={schoolName}
+                    onChange={(e) => setSchoolName(e.target.value)}
+                    placeholder={t("auth.school_name")}
+                    className="w-full bg-transparent outline-none text-sm"
+                  />
+                </Field>
+              </>
             )}
             <Field icon={Mail}>
               <input
@@ -108,7 +134,7 @@ function AuthPage() {
               <input
                 required
                 type="password"
-                minLength={4}
+                minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={t("auth.password")}
@@ -145,6 +171,11 @@ function AuthPage() {
                 {error}
               </div>
             )}
+            {info && (
+              <div className="text-xs font-medium text-success bg-success/10 rounded-lg px-3 py-2">
+                {info}
+              </div>
+            )}
 
             <button
               type="submit"
@@ -162,6 +193,7 @@ function AuthPage() {
               onClick={() => {
                 setMode(mode === "login" ? "signup" : "login");
                 setError(null);
+                setInfo(null);
               }}
               className="text-primary font-semibold hover:underline"
             >
